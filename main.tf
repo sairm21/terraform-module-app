@@ -45,6 +45,11 @@ resource "aws_iam_instance_profile" "instance_profile" {
   role = aws_iam_role.ec2_role.name
 }
 
+resource "aws_iam_role_policy_attachment" "policy-attach" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.ssm_policy.arn
+}
+
 
 resource "aws_security_group" "sg" {
   name        = "${var.component}-${var.env}-SG"
