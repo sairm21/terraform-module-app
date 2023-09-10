@@ -41,7 +41,7 @@ resource "aws_iam_role" "ec2_role" {
  }
 
 resource "aws_iam_instance_profile" "instance_profile" {
-  name = "${var.component}-${var.env}-EC2-role"
+  name = "${var.component}-${var.env}-EC2-profile"
   role = aws_iam_role.ec2_role.name
 }
 
@@ -81,7 +81,7 @@ resource "aws_instance" "instance" {
   ami           = data.aws_ami.ami.id
   instance_type = "t3.small"
   vpc_security_group_ids = [aws_security_group.sg.id]
-  iam_instance_profile = aws_iam_instance_profile.instance_profile.name
+  iam_instance_profile = aws_iam_instance_profile.instance_profile.name # instance profile is used to attach a role to instance
   tags = {
     Name = "${var.component}-${var.env}"
   }
