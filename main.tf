@@ -72,10 +72,9 @@ resource "aws_security_group" "sg" {
     ipv6_cidr_blocks = ["::/0"]
   }
 
-  tags = merge({
+  tags = {
     Name = "${var.component}-${var.env}"
-  },
-    var.tags)
+  }
 }
 
 resource "aws_instance" "instance" {
@@ -83,9 +82,10 @@ resource "aws_instance" "instance" {
   instance_type = "t3.small"
   vpc_security_group_ids = [aws_security_group.sg.id]
   iam_instance_profile = aws_iam_instance_profile.instance_profile.name # instance profile is used to attach a role to instance
-  tags = {
+  tags = merge({
     Name = "${var.component}-${var.env}"
-  }
+  },
+var.tags)
 }
 
 resource "aws_route53_record" "DNS" {
