@@ -130,6 +130,7 @@ resource "aws_instance" "instance" {
 resource "aws_security_group" "sg" {
   name        = "${var.component}-${var.env}-SG"
   description = "Allow ${var.component}-${var.env}-Traffic"
+  vpc_id = var.vpc_id
 
   ingress {
     description      = "Allow inbound traffic for ${var.component}-${var.env}"
