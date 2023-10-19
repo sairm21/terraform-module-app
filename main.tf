@@ -57,11 +57,6 @@ resource "aws_launch_template" "app_launch_template" {
       var.tags)
   }
 
-  root_block_device {
-    encrypted = true
-    kms_key_id = var.kms_key_id
-  }
-
   user_data     = base64encode(templatefile("${path.module}/userdata.sh", {
     env = var.env
     component = var.component
