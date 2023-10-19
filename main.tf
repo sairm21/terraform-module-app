@@ -12,7 +12,7 @@ resource "aws_security_group" "sg" {
   }
 
   ingress {
-    description      = "Allow inbound traffic for ${var.component}-${var.env} from ${var.bastion_host}"
+    description      = "Allow inbound traffic for ${var.component}-${var.env}"
     from_port        = 22
     to_port          = 22
     protocol         = "tcp"
