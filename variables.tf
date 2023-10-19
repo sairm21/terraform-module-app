@@ -12,3 +12,4 @@ variable "kms_key_id" {}
 variable "min_size" {}
 variable "max_size" {}
 variable "desired_capacity" {}
+variable "bastion_host" {}

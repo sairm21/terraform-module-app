@@ -11,6 +11,14 @@ resource "aws_security_group" "sg" {
     cidr_blocks      = var.sg_subnets_cidr # to allow traffic only from internal LB
   }
 
+  ingress {
+    description      = "Allow inbound traffic for ${var.component}-${var.env} from ${var.bastion_host}"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = var.bastion_host
+  }
+
   egress {
     from_port        = 0
     to_port          = 0
