@@ -1,132 +1,3 @@
-/*
-resource "aws_iam_policy" "ssm_policy" {
-  name        = "${var.component}-${var.env}-ssm-ps-policy"
-  path        = "/"
-  description = "${var.component}-${var.env}-ssm-ps-policy"
-
-  policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Sid": "VisualEditor0",
-        "Effect": "Allow",
-        "Action": [
-          "ssm:GetParameterHistory",
-          "ssm:GetParametersByPath",
-          "ssm:GetParameters",
-          "ssm:GetParameter"
-        ],
-        "Resource": "arn:aws:ssm:us-east-1:804838709963:parameter/roboshop.${var.env}.${lower(var.component)}.*"
-      }
-    ]
-  })
-}
-
-
-resource "aws_iam_role" "ec2_role" {
-  name = "${var.component}-${var.env}-EC2-role"
-
- assume_role_policy = jsonencode({
-   "Version": "2012-10-17",
-   "Statement": [
-     {
-       "Effect": "Allow",
-       "Principal": {
-         "Service": "ec2.amazonaws.com"
-       },
-       "Action": "sts:AssumeRole"
-     }
-   ]
- })
-
- }
-
-resource "aws_iam_instance_profile" "instance_profile" {
-  name = "${var.component}-${var.env}-EC2-profile"
-  role = aws_iam_role.ec2_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "policy-attach" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = aws_iam_policy.ssm_policy.arn
-}
-
-
-resource "aws_security_group" "sg" {
-  name        = "${var.component}-${var.env}-SG"
-  description = "Allow ${var.component}-${var.env}-Traffic"
-
-  ingress {
-    description      = "Allow inbound traffic for ${var.component}-${var.env}"
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1" # allow all trafic
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
-
-  egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
-
-  tags = {
-    Name = "${var.component}-${var.env}"
-  }
-}
-
-resource "aws_instance" "instance" {
-  ami           = data.aws_ami.ami.id
-  instance_type = "t3.small"
-  vpc_security_group_ids = [aws_security_group.sg.id]
-  iam_instance_profile = aws_iam_instance_profile.instance_profile.name # instance profile is used to attach a role to instance
-
-  tags = merge({
-    Name = "${var.component}-${var.env}"
-  },
-var.tags)
-}
-
-resource "aws_route53_record" "DNS" {
-  zone_id = "Z07064001LQWEDMH2WVFL"
-  name    = "${var.component}-dev"
-  type    = "A"
-  ttl     = 300
-  records = [aws_instance.instance.private_ip]
-}
-
-resource "null_resource" "ansible_playbook" {
-  depends_on = [aws_instance.instance, aws_route53_record.DNS]
-  provisioner "remote-exec" {
-    connection {
-      type     = "ssh"
-      user     = "centos"
-      password = "DevOps321"
-      host     = aws_instance.instance.public_ip
-    }
-    inline = [
-      "sudo labauto ansible",
-      "sudo set-hostname -skip-apply ${var.component}",
-      "ansible-pull -i localhost, -U https://github.com/sairm21/roboshop-ansible-v1 -e env=${var.env} -e role_name=${var.component} main.yml"
-    ]
-  }
-}*/
-
-resource "aws_instance" "instance" {
-  ami           = data.aws_ami.ami.id
-  instance_type = "t3.small"
-  vpc_security_group_ids = [aws_security_group.sg.id]
-  subnet_id = var.subnet_id
-
-  tags = merge({
-    Name = "${var.component}-${var.env}"
-  },
-    var.tags)
-}
-
 resource "aws_security_group" "sg" {
   name        = "${var.component}-${var.env}-SG"
   description = "Allow ${var.component}-${var.env}-Traffic"
@@ -134,22 +5,88 @@ resource "aws_security_group" "sg" {
 
   ingress {
     description      = "Allow inbound traffic for ${var.component}-${var.env}"
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1" # allow all trafic
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+    from_port        = var.app_port
+    to_port          = var.app_port
+    protocol         = "tcp"
+    cidr_blocks      = var.sg_subnets_cidr # to allow traffic only from internal LB
   }
 
   egress {
     from_port        = 0
     to_port          = 0
-    protocol         = "-1"
+    protocol         = "-1" # to all all traffic
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
 
-  tags = {
-    Name = "${var.component}-${var.env}"
+  tags = merge({
+    Name = "${var.env}-${var.component}-SG"
+  },
+    var.tags)
+}
+
+resource "aws_launch_template" "app_launch_template" {
+  name = "${var.component}-${var.env}-launch-template"
+
+  block_device_mappings {
+    device_name = "/dev/sdf"
+
+    ebs {
+      volume_size = 20
+      encrypted = true
+      kms_key_id = var.kms_key_id
+    }
+  }
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.instance_profile.name
+  }
+
+  image_id = data.aws_ami.ami.id
+
+  instance_type = var.instance_type
+
+  vpc_security_group_ids = [aws_security_group.sg.id]
+
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = merge({
+      Name = "${var.env}-${var.component}", Monitor= "True"
+    },
+      var.tags)
+  }
+
+  root_block_device {
+    encrypted = true
+    kms_key_id = var.kms_key_id
+  }
+
+  user_data     = base64encode(templatefile("${path.module}/userdata.sh", {
+    env = var.env
+    component = var.component
+
+  }))
+
+}
+
+resource "aws_autoscaling_group" "app_ASG" {
+  desired_capacity   = var.desired_capacity
+  max_size           = var.max_size
+  min_size           = var.min_size
+  vpc_zone_identifier = var.subnets
+
+  launch_template {
+    id      = aws_launch_template.app_launch_template.id
+    version = "$Latest"
   }
 }
+/*
+resource "aws_route53_record" "DNS" {
+  zone_id = "Z07064001LQWEDMH2WVFL"
+  name    = "${var.component}-dev"
+  type    = "A"
+  ttl     = 300
+  records = [aws_instance.instance.private_ip]
+}
+*/
