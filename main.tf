@@ -27,7 +27,7 @@ resource "aws_security_group" "sg" {
 
 resource "aws_launch_template" "app_launch_template" {
   name = "${var.component}-${var.env}-launch-template"
-
+/*
   block_device_mappings {
     device_name = "/dev/sdf"
 
@@ -37,7 +37,7 @@ resource "aws_launch_template" "app_launch_template" {
       kms_key_id = var.kms_key_id
     }
   }
-
+*/
   iam_instance_profile {
     name = aws_iam_instance_profile.instance_profile.name
   }
