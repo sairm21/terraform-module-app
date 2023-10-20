@@ -92,7 +92,7 @@ resource "aws_autoscaling_group" "app_ASG" {
     version = "$Latest"
   }
 }
-/*
+
 resource "aws_route53_record" "DNS" {
   zone_id = "Z07064001LQWEDMH2WVFL"
   name    = "${var.component}-dev"
@@ -100,4 +100,3 @@ resource "aws_route53_record" "DNS" {
   ttl     = 300
   records = [var.lb_dns_name]
 }
-*/
