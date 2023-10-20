@@ -13,4 +13,4 @@ variable "min_size" {}
 variable "max_size" {}
 variable "desired_capacity" {}
 variable "bastion_host" {}
-variable "lb_dns_name" {}
+# variable "lb_dns_name" {}
