@@ -14,3 +14,5 @@ variable "max_size" {}
 variable "desired_capacity" {}
 variable "bastion_host" {}
 variable "lb_dns_name" {}
+variable "listener_arn" {}
+variable "lb_rule_priority" {}
