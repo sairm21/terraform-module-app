@@ -78,6 +78,17 @@ resource "aws_lb_target_group" "app_tg" {
   port     = var.app_port
   protocol = "HTTP"
   vpc_id   = var.vpc_id
+
+  health_check {
+    enabled = true
+    healthy_threshold = 2
+    unhealthy_threshold = 2
+    interval = 5
+    path = "/health"
+    port = var.app_port
+    protocol = "HTTP"
+    timeout = 5
+  }
 }
 
 resource "aws_lb_listener_rule" "static" {
