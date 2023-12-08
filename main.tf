@@ -19,6 +19,14 @@ resource "aws_security_group" "sg" {
     cidr_blocks      = var.bastion_host
   }
 
+  ingress {
+    description      = "Allow inbound traffic for ${var.component}-${var.env}"
+    from_port        = 9100
+    to_port          = 9100
+    protocol         = "tcp"
+    cidr_blocks      = var.allow_prometheus
+  }
+
   egress {
     from_port        = 0
     to_port          = 0
